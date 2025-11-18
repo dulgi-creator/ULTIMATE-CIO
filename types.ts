@@ -4,8 +4,6 @@ export enum AnalysisMode {
   NEWS = 'NEWS_DASHBOARD'
 }
 
-export type Language = 'en' | 'ko';
-
 export interface AnalysisState {
   status: 'idle' | 'loading' | 'success' | 'error';
   data: string | null; // Markdown content
@@ -25,7 +23,6 @@ export interface SavedReport {
 export interface SearchParams {
   query: string;
   mode: AnalysisMode;
-  lang: Language;
 }
 
 // Placeholder for groundings if we were to parse them specifically

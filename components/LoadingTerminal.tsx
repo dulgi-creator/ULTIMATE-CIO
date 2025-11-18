@@ -1,48 +1,52 @@
 import React, { useEffect, useState } from 'react';
-import { Terminal, RefreshCw, ChevronDown, ChevronUp, Coffee, Smile } from 'lucide-react';
+import { Terminal, ChevronDown, ChevronUp, Coffee, Smile } from 'lucide-react';
 
 interface LoadingTerminalProps {
   query: string;
-  lang?: 'en' | 'ko';
 }
 
 const STEPS = [
-  "System Initializing...",
-  "Connecting to Global Market Database...",
-  "Protocol 1: Real-time Search Synchronization...",
-  "Verifying Ticker Symbol & Exchange Data...",
-  "Analyzing Macro Economic Indicators...",
-  "Scanning EDGAR/DART Filings...",
-  "Calculating Financial Ratios (PER, PBR, ROE)...",
-  "Simulating 3-Scenario Strategy (Plan A/B/C)...",
-  "Compiling Ultimate Investment Report..."
+  "시스템 초기화 중...",
+  "글로벌 마켓 데이터베이스 연결 중...",
+  "프로토콜 1: 실시간 검색 동기화...",
+  "티커 심볼 및 거래소 데이터 검증 중...",
+  "거시 경제 지표 분석 중...",
+  "DART/SEC 공시 자료 스캔 중...",
+  "재무 비율 계산 중 (내부 프로세스)...",
+  "3가지 시나리오 전략 시뮬레이션 (Plan A/B/C)...",
+  "최종 투자 리포트 작성 중..."
 ];
 
-const HUMOR_DATA = {
-  en: [
-    "Only buy something that you'd be perfectly happy to hold if the market shut down for 10 years. - Warren Buffett",
-    "The four most dangerous words in investing are: 'This time it's different.'",
-    "Why did the investor bring a ladder? To reach the high yield!",
-    "Stock market: A place where money changes hands from the impatient to the patient.",
-    "Bull markets are born on pessimism, grow on skepticism, mature on optimism, and die on euphoria.",
-    "I told my broker to buy low and sell high. He asked, 'Exactly how high and how low?'",
-    "Risk comes from not knowing what you're doing.",
-    "In the short run, the market is a voting machine but in the long run, it is a weighing machine."
-  ],
-  ko: [
-    "10년 동안 주식시장이 문을 닫아도 마음 편히 보유할 주식만 사라. - 워렌 버핏",
-    "투자에서 가장 위험한 네 마디: '이번엔 다르다 (This time it's different).'",
-    "주식시장은 인내심 없는 사람의 돈을 인내심 있는 사람에게 이동시키는 도구다.",
-    "비관론자는 명성을 얻고, 낙관론자는 돈을 번다.",
-    "떨어지는 칼날을 잡지 마라. 하지만 바닥에 꽂힌 칼은 뽑아도 된다.",
-    "내가 사면 떨어지고 내가 팔면 오르는 건 과학입니다.",
-    "존버는 승리한다... 단, 우량주에서만.",
-    "무릎에 사서 어깨에 팔라는데, 내 무릎이 어디인지 도통 모르겠다.",
-    "계란을 한 바구니에 담지 마라. 근데 바구니가 하나밖에 없으면 어떡하죠?"
-  ]
-};
+const HUMOR_DATA = [
+  // 대가들의 명언 (PDF 기반)
+  "워렌 버핏: '10년 보유할 생각 아니면 10분도 쳐다보지 마라.' (단타 금지령)",
+  "워렌 버핏: '남들이 공포에 질렸을 때 탐욕을 부려라.' (청개구리 매매법)",
+  "워렌 버핏: '썰물 때가 되어봐야 누가 발가벗고 수영했는지 알 수 있다.' (리스크 관리의 중요성)",
+  "찰리 멍거: '좋은 기업을 제값 주고 사는 게, 똥차를 싸게 사는 것보다 낫다.'",
+  "피터 린치: '주식 시장에서 가장 중요한 기관은 두뇌가 아니라 위장(Stomach)이다.' (멘탈이 실력이다)",
+  "피터 린치: '떨어지는 칼날을 잡지 마라. 바닥에 꽂히고 잠잠해질 때까지 기다려라.'",
+  "앙드레 코스톨라니: '주식을 사고 수면제를 먹어라. 10년 뒤 깨어나면 부자가 되어 있을 것이다.'",
+  "존 템플턴: '모두가 비관적일 때가 최상의 매수 시점이다.' (근데 손이 안 나감)",
+  "벤저민 그레이엄: '미스터 마켓은 조울증 환자다. 그 사람 기분에 내 지갑을 맡기지 마라.'",
+  // 현대 투자 유머 및 밈 (PDF 기반)
+  "💎 다이아몬드 핸즈 (Diamond Hands): 계좌가 파래져도 절대 팔지 않는 강철 멘탈. (a.k.a 존버)",
+  "🧻 페이퍼 핸즈 (Paper Hands): 작은 하락에도 호들갑 떨며 매도 버튼 누르는 쿠크다스 멘탈.",
+  "🚀 화성 갈끄니까 (To The Moon): 주가가 하늘을 뚫고 우주로 갈 거라는 행복회로.",
+  "📈 스통크스 (Stonks): 이유 불문하고 무조건 오르는 주식. (논리는 사치다)",
+  "🦍 영끌: 영혼까지 끌어모아 풀매수. 실패하면 영혼이 가출함.",
+  "😭 벼락거지: 나만 빼고 다 부자 된 것 같은 상대적 박탈감.",
+  "🍗 치킨값 벌었다: 하루 종일 차트 보고 스트레스 받아서 번 돈이 딱 치킨 한 마리 값.",
+  "🐜 동학개미: 외국인과 기관에 맞서 싸우는 대한민국 개인 투자자들.",
+  "💧 물타기: 평단 낮추려다 대주주 되는 지름길. (물론 물인지 늪인지는 모름)",
+  "🙏 기도매매: 분석은 끝났다. 이제 신에게 맡긴다.",
+  "📉 돔황챠: 악재 터지면 뒤도 돌아보지 말고 튀어라. (Run!)",
+  "🧠 뇌동매매: 뇌를 거치지 않고 손가락이 먼저 매수 버튼을 누르는 신비한 현상.",
+  "🏗️ 구조대: 고점에 물린 나를 구하러 올 다음 매수자들. (오고 있는 거 맞죠?)",
+  "💸 한강 간다: 투자 실패 시 나오는 극단적 비관 심리. (물론 진짜 가진 않음)",
+  "🛌 존버: '존나 버티기'의 순화어. 승리자의 유일한 전략."
+];
 
-export const LoadingTerminal: React.FC<LoadingTerminalProps> = ({ query, lang = 'en' }) => {
+export const LoadingTerminal: React.FC<LoadingTerminalProps> = ({ query }) => {
   const [logs, setLogs] = useState<string[]>([]);
   const [jokeIndex, setJokeIndex] = useState(0);
   
@@ -65,24 +69,22 @@ export const LoadingTerminal: React.FC<LoadingTerminalProps> = ({ query, lang = 
   }, []);
 
   useEffect(() => {
-    const jokes = HUMOR_DATA[lang];
-    
     // Set initial random joke
-    setJokeIndex(Math.floor(Math.random() * jokes.length));
+    setJokeIndex(Math.floor(Math.random() * HUMOR_DATA.length));
 
     const interval = setInterval(() => {
       setJokeIndex((prev) => {
         // Pick a random index that is different from the current one
         let next;
         do {
-          next = Math.floor(Math.random() * jokes.length);
-        } while (next === prev && jokes.length > 1);
+          next = Math.floor(Math.random() * HUMOR_DATA.length);
+        } while (next === prev && HUMOR_DATA.length > 1);
         return next;
       });
     }, 4000); // Rotate joke every 4 seconds
 
     return () => clearInterval(interval);
-  }, [lang]);
+  }, []);
 
   return (
     <div className="w-full max-w-4xl mx-auto mt-8 flex flex-col gap-4">
@@ -96,7 +98,7 @@ export const LoadingTerminal: React.FC<LoadingTerminalProps> = ({ query, lang = 
           <div className="flex items-center gap-2 text-cyan-400">
             <Coffee size={18} />
             <span className="font-bold text-sm uppercase tracking-wider">
-              {lang === 'en' ? 'Stress Relief Protocol' : '스트레스 완화 프로토콜'}
+              투자 심리 안정 프로토콜
             </span>
           </div>
           <div className="text-cyan-600">
@@ -112,10 +114,10 @@ export const LoadingTerminal: React.FC<LoadingTerminalProps> = ({ query, lang = 
               </div>
             </div>
             <p className="text-lg md:text-xl text-slate-200 font-medium italic leading-relaxed font-serif">
-              "{HUMOR_DATA[lang][jokeIndex]}"
+              "{HUMOR_DATA[jokeIndex]}"
             </p>
             <div className="mt-4 flex justify-center gap-1">
-              {HUMOR_DATA[lang].map((_, i) => (
+              {HUMOR_DATA.map((_, i) => (
                 <div 
                   key={i} 
                   className={`h-1 rounded-full transition-all duration-500 ${i === jokeIndex ? 'w-6 bg-cyan-500' : 'w-2 bg-slate-700'}`}
@@ -135,34 +137,20 @@ export const LoadingTerminal: React.FC<LoadingTerminalProps> = ({ query, lang = 
           <div className="flex items-center gap-2">
             <Terminal size={14} className="text-emerald-500" />
             <span className="text-slate-400 font-semibold text-xs uppercase">CIO_Process_Monitor.exe</span>
-            {!isLogsOpen && (
-               <span className="text-slate-600 text-xs ml-2 animate-pulse">
-                 {logs.length > 0 ? logs[logs.length - 1] : 'Initializing...'}
-               </span>
-            )}
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex gap-1.5 mr-2">
-              <div className="w-2 h-2 rounded-full bg-red-500/50" />
-              <div className="w-2 h-2 rounded-full bg-yellow-500/50" />
-              <div className="w-2 h-2 rounded-full bg-green-500/50" />
-            </div>
-            {isLogsOpen ? <ChevronUp size={14} className="text-slate-500" /> : <ChevronDown size={14} className="text-slate-500" />}
+          <div className="text-slate-500">
+            {isLogsOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
           </div>
         </div>
-
+        
         {isLogsOpen && (
-          <div className="p-6 h-64 overflow-y-auto flex flex-col gap-2 bg-slate-950/50">
-            <div className="text-cyan-400 mb-2">Target Asset: "{query}"</div>
+          <div className="p-4 space-y-2 h-48 overflow-y-auto custom-scrollbar">
             {logs.map((log, index) => (
-              <div key={index} className="text-emerald-500/90 border-l-2 border-emerald-500/20 pl-2">
+              <div key={index} className="text-emerald-500/90 animate-pulse-subtle">
                 {log}
               </div>
             ))}
-            <div className="flex items-center gap-2 text-slate-500 mt-auto pt-4 border-t border-slate-800/50">
-              <RefreshCw className="animate-spin" size={14} />
-              <span>Processing complex data models...</span>
-            </div>
+            <div className="animate-pulse text-emerald-500">_</div>
           </div>
         )}
       </div>

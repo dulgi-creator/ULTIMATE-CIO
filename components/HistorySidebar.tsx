@@ -8,7 +8,6 @@ interface HistorySidebarProps {
   savedReports: SavedReport[];
   onSelectReport: (report: SavedReport) => void;
   onDeleteReport: (id: string) => void;
-  lang: 'en' | 'ko';
 }
 
 export const HistorySidebar: React.FC<HistorySidebarProps> = ({
@@ -16,8 +15,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
   onClose,
   savedReports,
   onSelectReport,
-  onDeleteReport,
-  lang
+  onDeleteReport
 }) => {
   const getIcon = (mode: AnalysisMode) => {
     switch (mode) {
@@ -46,7 +44,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           <div className="p-4 border-b border-slate-800 flex items-center justify-between bg-slate-900/50">
             <h2 className="text-slate-200 font-bold flex items-center gap-2">
               <FileText size={18} className="text-cyan-500" />
-              {lang === 'en' ? 'Saved Reports' : '저장된 리포트'}
+              저장된 리포트
             </h2>
             <button 
               onClick={onClose}
@@ -60,7 +58,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
           <div className="flex-1 overflow-y-auto p-2 space-y-2">
             {savedReports.length === 0 ? (
               <div className="text-center py-10 text-slate-500 text-sm">
-                {lang === 'en' ? 'No reports saved yet.' : '저장된 리포트가 없습니다.'}
+                저장된 리포트가 없습니다.
               </div>
             ) : (
               savedReports.map((report) => (
@@ -80,7 +78,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
                         onDeleteReport(report.id);
                       }}
                       className="text-slate-600 hover:text-red-400 transition-colors p-1 opacity-0 group-hover:opacity-100"
-                      title="Delete"
+                      title="삭제"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -96,7 +94,7 @@ export const HistorySidebar: React.FC<HistorySidebarProps> = ({
 
           {/* Footer */}
           <div className="p-3 border-t border-slate-800 bg-slate-900/30 text-[10px] text-slate-600 text-center">
-            Auto-saving enabled
+            자동 저장 활성화됨
           </div>
         </div>
       </div>

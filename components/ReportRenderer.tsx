@@ -8,6 +8,7 @@ import {
 
 interface ReportRendererProps {
   content: string;
+  onDeepDive?: (topic: string) => void;
 }
 
 interface Section {
@@ -16,7 +17,7 @@ interface Section {
   content: string;
 }
 
-export const ReportRenderer: React.FC<ReportRendererProps> = ({ content }) => {
+export const ReportRenderer: React.FC<ReportRendererProps> = ({ content, onDeepDive }) => {
   const [expandAll, setExpandAll] = useState(false);
 
   // 1. Parse Alerts, News, and Sections

@@ -1,6 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
-import { AnalysisMode, Language } from "../types";
-import { SYSTEM_PERSONAS } from "../constants";
+import { AnalysisMode } from "../types";
+import { SYSTEM_PERSONA } from "../constants";
 
 const getApiKey = (): string => {
   const key = process.env.API_KEY;
@@ -13,8 +13,7 @@ const getApiKey = (): string => {
 
 export const generateAnalysisReport = async (
   query: string,
-  mode: AnalysisMode,
-  lang: Language
+  mode: AnalysisMode
 ): Promise<string> => {
   const apiKey = getApiKey();
   if (!apiKey) throw new Error("API Key configuration error.");
@@ -24,25 +23,17 @@ export const generateAnalysisReport = async (
   // Select model based on complexity
   const modelName = 'gemini-2.5-flash'; 
 
-  const persona = SYSTEM_PERSONAS[lang];
-
   let modeInstruction = "";
   
   switch (mode) {
     case AnalysisMode.DEEP_DIVE:
-      modeInstruction = lang === 'ko' 
-        ? "사용자가 TYPE A (심층 분석)을 요청했습니다. 밀도 높은 기관급 보고서를 작성하십시오." 
-        : "User requested TYPE A (Deep Dive). Generate a dense, institutional-grade report.";
+      modeInstruction = "사용자가 TYPE A (심층 분석)을 요청했습니다. 밀도 높은 기관급 보고서를 작성하십시오. 특수 기호나 수식 노출을 피하고 서술형으로 작성하십시오."; 
       break;
     case AnalysisMode.QUICK_INTEL:
-      modeInstruction = lang === 'ko'
-        ? "사용자가 TYPE B (신속 검증)을 요청했습니다. 팩트 위주로 간결하게 답변하십시오."
-        : "User requested TYPE B (Quick Intel). specific facts and verification.";
+      modeInstruction = "사용자가 TYPE B (신속 검증)을 요청했습니다. 팩트 위주로 간결하게 답변하십시오.";
       break;
     case AnalysisMode.NEWS:
-      modeInstruction = lang === 'ko'
-        ? "사용자가 [최신 뉴스 대시보드]를 요청했습니다. 글로벌/국내 헤드라인과 해당 자산의 최신 뉴스를 요약하고 주요 지표를 테이블로 제시하십시오."
-        : "User requested [Latest News Dashboard]. Summarize global/local headlines and specific asset news with a metrics table.";
+      modeInstruction = "사용자가 [최신 뉴스 대시보드]를 요청했습니다. 글로벌/국내 헤드라인과 해당 자산의 최신 뉴스를 요약하십시오. 내용이 끊기지 않도록 끝까지 작성하십시오.";
       break;
   }
 
@@ -53,8 +44,8 @@ export const generateAnalysisReport = async (
         {
           role: "user",
           parts: [
-            { text: persona },
-            { text: `Target Asset/Query: ${query || (lang === 'ko' ? "글로벌 시장 동향" : "Global Market Trends")}` },
+            { text: SYSTEM_PERSONA },
+            { text: `Target Asset/Query: ${query || "글로벌 시장 동향"}` },
             { text: modeInstruction }
           ]
         }
@@ -63,7 +54,8 @@ export const generateAnalysisReport = async (
         // Using Google Search Grounding is MANDATORY for this persona to get the Date/Time sync.
         tools: [{ googleSearch: {} }], 
         temperature: 0.7,
-        maxOutputTokens: mode === AnalysisMode.NEWS ? 2000 : 8000,
+        // Set high token limit to ensure news/reports are not truncated
+        maxOutputTokens: 8192,
         safetySettings: [
           { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
           { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
