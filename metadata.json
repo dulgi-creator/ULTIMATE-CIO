@@ -1,0 +1,5 @@
+{
+  "name": "Ultimate Investment Analysis CIO",
+  "description": "A professional-grade investment analysis dashboard powered by Gemini 2.5. Features real-time data synchronization, deep-dive reporting, and scenario planning (Plan A/B/C) for financial assets.",
+  "requestFramePermissions": []
+}
