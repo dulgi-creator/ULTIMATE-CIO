@@ -3,7 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { 
   FileText, ChevronDown, ChevronUp, AlertOctagon, BellRing, 
-  Newspaper, BarChart2, Anchor, Layers, Maximize2, Minimize2 
+  Newspaper, BarChart2, Anchor, Layers, Maximize2, Minimize2, Users, Briefcase, PieChart, Image as ImageIcon
 } from 'lucide-react';
 
 interface ReportRendererProps {
@@ -58,8 +58,6 @@ export const ReportRenderer: React.FC<ReportRendererProps> = ({ content }) => {
     const element = document.getElementById(id);
     if (element) {
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      // Optionally open the section if it's closed? 
-      // The CollapsibleSection needs to know about this, but simple scroll is okay for now.
     }
   };
 
@@ -132,20 +130,7 @@ export const ReportRenderer: React.FC<ReportRendererProps> = ({ content }) => {
                 </div>
              </div>
              <div className="p-4 bg-slate-900/50">
-                <ReactMarkdown
-                  components={{
-                     ul: ({node, ...props}) => <ul className="space-y-3" {...props} />,
-                     li: ({node, ...props}) => (
-                       <li className="flex items-start gap-3 text-sm text-slate-300 bg-slate-800/50 p-3 rounded-lg border border-slate-700/50 hover:border-slate-600 transition-colors" {...props}>
-                         <span className="mt-1 w-1.5 h-1.5 rounded-full bg-cyan-500 shrink-0"></span>
-                         <span className="flex-1">{props.children}</span>
-                       </li>
-                     ),
-                     a: ({node, ...props}) => <a className="text-cyan-400 hover:underline ml-1" {...props} />
-                  }}
-                >
-                  {newsContent}
-                </ReactMarkdown>
+                <MarkdownBlock text={newsContent} />
              </div>
           </div>
         )}
@@ -209,49 +194,71 @@ const CollapsibleSection: React.FC<{ id: string; title: string; content: string;
     setIsOpen(forceOpen);
   }, [forceOpen]);
 
-  const isStrategy = title.toLowerCase().includes('plan') || title.includes('시나리오');
-  const isSummary = title.toLowerCase().includes('summary') || title.includes('요약');
+  const lowerTitle = title.toLowerCase();
+  const isStrategy = lowerTitle.includes('plan') || lowerTitle.includes('시나리오');
+  const isSummary = lowerTitle.includes('summary') || lowerTitle.includes('요약');
+  const isGeneration = lowerTitle.includes('generation') || lowerTitle.includes('세대') || lowerTitle.includes('관점');
 
-  // Custom renderer to handle [Visual: ...] tags and styled blocks
+  const getIcon = () => {
+    if (isStrategy) return <Layers className="text-emerald-400" size={18} />;
+    if (isSummary) return <FileText className="text-amber-400" size={18} />;
+    if (isGeneration) return <Users className="text-purple-400" size={18} />;
+    return <Briefcase className="text-slate-400" size={18} />;
+  };
+
+  // Custom renderer to handle [Visual: ...] and [Image: ...] tags
   const renderContent = (text: string) => {
-    // Regex to find [Visual: ...]
-    const visualRegex = /\[Visual:\s*(.*?)\]/g;
-    const parts = text.split(visualRegex);
+    // Regex for Visual or Image tags
+    const tagRegex = /\[(Visual|Image):\s*(.*?)\]/g;
+    const parts = text.split(tagRegex);
     
     if (parts.length === 1) return <MarkdownBlock text={text} />;
 
     // Interleave parts with Visual components
-    const matches = text.match(visualRegex);
-    return parts.map((part, index) => {
-      const visualMatch = matches && matches[index] ? matches[index].match(/\[Visual:\s*(.*?)\]/) : null;
-      const visualDesc = visualMatch ? visualMatch[1] : null;
+    const matches = [...text.matchAll(tagRegex)];
+    
+    let currentTextIndex = 0;
+    const result = [];
 
-      return (
-        <React.Fragment key={index}>
-          {part && <MarkdownBlock text={part} />}
-          {index < parts.length - 1 && (
-            <div className="my-6 bg-slate-800/50 border border-slate-700 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center group hover:bg-slate-800 transition-colors">
-              <div className="bg-slate-700 p-3 rounded-full mb-3 group-hover:bg-slate-600">
-                <BarChart2 className="text-cyan-400" size={24} />
-              </div>
-              <span className="text-xs text-cyan-500 font-mono uppercase mb-1">Generated Visual Representation</span>
-              <p className="text-slate-300 font-medium italic">"{visualDesc}"</p>
+    // Reconstruct logic to handle matchAll which provides captured groups
+    // Logic: text before match -> component -> text after...
+    // Using split results is safer for interleaving.
+    // Split results: [text, Type, Desc, text, Type, Desc, text...]
+    
+    for (let i = 0; i < parts.length; i += 3) {
+      const textPart = parts[i];
+      if (textPart) {
+        result.push(<MarkdownBlock key={`text-${i}`} text={textPart} />);
+      }
+
+      if (i + 2 < parts.length) {
+        const type = parts[i+1]; // Visual or Image
+        const desc = parts[i+2];
+        
+        result.push(
+          <div key={`visual-${i}`} className="my-6 bg-slate-800/50 border border-slate-700 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center text-center group hover:bg-slate-800 transition-colors shadow-lg">
+            <div className="bg-slate-700 p-3 rounded-full mb-3 group-hover:bg-slate-600">
+              {type === 'Image' ? <ImageIcon className="text-emerald-400" size={24} /> : <BarChart2 className="text-cyan-400" size={24} />}
             </div>
-          )}
-        </React.Fragment>
-      );
-    });
+            <span className="text-xs text-cyan-500 font-mono uppercase mb-1">
+              {type === 'Image' ? 'News Image Source' : 'Generated Visual Representation'}
+            </span>
+            <p className="text-slate-300 font-medium italic">"{desc}"</p>
+          </div>
+        );
+      }
+    }
+    return result;
   };
 
   return (
-    <div id={id} className={`border rounded-lg transition-all duration-300 ${isOpen ? 'bg-slate-800/20 border-slate-700 shadow-sm' : 'bg-transparent border-slate-800 hover:border-slate-700'}`}>
+    <div id={id} className={`border rounded-xl transition-all duration-300 ${isOpen ? 'bg-slate-800/20 border-slate-700 shadow-sm' : 'bg-transparent border-slate-800 hover:border-slate-700'}`}>
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className="w-full flex items-center justify-between p-4 text-left focus:outline-none group"
       >
         <div className="flex items-center gap-3">
-          {isStrategy && <Layers className="text-emerald-400" size={18} />}
-          {isSummary && <FileText className="text-amber-400" size={18} />}
+          {getIcon()}
           <h3 className={`font-semibold text-lg transition-colors ${isStrategy ? 'text-emerald-400' : (isOpen ? 'text-white' : 'text-slate-300 group-hover:text-white')}`}>
             {title}
           </h3>
@@ -285,10 +292,11 @@ const MarkdownBlock: React.FC<{ text: string }> = ({ text }) => {
         strong: ({node, ...props}) => <strong className="text-white font-semibold" {...props} />,
         a: ({node, ...props}) => <a className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2" {...props} />,
         code: ({node, ...props}) => <code className="bg-slate-950 px-1.5 py-0.5 rounded text-sm font-mono text-emerald-300 border border-slate-800" {...props} />,
-        table: ({node, ...props}) => <div className="overflow-x-auto my-6 rounded-lg border border-slate-700"><table className="w-full text-sm text-left" {...props} /></div>,
+        img: ({node, ...props}) => <img className="rounded-2xl shadow-lg my-4 border border-slate-700" {...props} />,
+        table: ({node, ...props}) => <div className="overflow-x-auto my-6 rounded-lg border border-slate-700 shadow-inner bg-slate-900/50"><table className="w-full text-sm text-left" {...props} /></div>,
         thead: ({node, ...props}) => <thead className="bg-slate-800 text-slate-200 uppercase font-mono" {...props} />,
-        th: ({node, ...props}) => <th className="px-4 py-3 font-medium" {...props} />,
-        td: ({node, ...props}) => <td className="px-4 py-3 border-t border-slate-700" {...props} />,
+        th: ({node, ...props}) => <th className="px-4 py-3 font-medium border-b border-slate-700" {...props} />,
+        td: ({node, ...props}) => <td className="px-4 py-3 border-b border-slate-700/50" {...props} />,
       }}
     >
       {text}

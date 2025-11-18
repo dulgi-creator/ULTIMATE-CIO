@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Activity, Search, Zap, BookOpen, ArrowRight, Globe, TrendingUp, ExternalLink, BarChart, Newspaper, Menu, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { AnalysisMode, AnalysisState, Language, SavedReport } from './types';
 import { MODE_DESCRIPTIONS } from './constants';
@@ -58,8 +58,6 @@ const App: React.FC = () => {
       content
     };
     setSavedReports(prev => [newReport, ...prev]);
-    // Auto-open sidebar to show saved state briefly? Maybe just a notification, 
-    // but user asked for auto-save. We'll let the sidebar handle display.
   };
 
   const deleteReport = (id: string) => {
@@ -81,16 +79,14 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAnalyze = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const performAnalysis = useCallback(async (currentQuery: string, currentMode: AnalysisMode, currentLang: Language) => {
     // For News Dashboard, query can be empty (defaults to global)
-    if (!query.trim() && mode !== AnalysisMode.NEWS) return;
+    if (!currentQuery.trim() && currentMode !== AnalysisMode.NEWS) return;
 
     setAnalysisState({ status: 'loading', data: null, error: null, logs: [] });
 
     try {
-      const report = await generateAnalysisReport(query, mode, lang);
+      const report = await generateAnalysisReport(currentQuery, currentMode, currentLang);
       setAnalysisState({
         status: 'success',
         data: report,
@@ -98,7 +94,7 @@ const App: React.FC = () => {
         logs: []
       });
       // Auto Save
-      saveReport(query, mode, report);
+      saveReport(currentQuery, currentMode, report);
     } catch (err: any) {
       setAnalysisState({
         status: 'error',
@@ -107,10 +103,42 @@ const App: React.FC = () => {
         logs: []
       });
     }
+  }, []);
+
+  const handleAnalyze = async (e: React.FormEvent) => {
+    e.preventDefault();
+    performAnalysis(query, mode, lang);
   };
+
+  // Auto-Refresh for News Dashboard (Every 10 minutes)
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    // Only activate timer if we are in News Mode and have already loaded data once
+    // This prevents auto-start on page load unless logic changes, but keeps dashboard fresh
+    if (mode === AnalysisMode.NEWS && analysisState.status === 'success') {
+       // 10 minutes = 600,000 ms
+       interval = setInterval(() => {
+         console.log("Auto-refreshing News Dashboard...");
+         performAnalysis(query, mode, lang);
+       }, 600000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [mode, analysisState.status, query, lang, performAnalysis]);
 
   const toggleLang = () => {
     setLang(prev => prev === 'en' ? 'ko' : 'en');
+  };
+
+  // Callbacks for ReportRenderer deep actions
+  const handleDeepDiveRequest = (topic: string) => {
+    setQuery(topic);
+    setMode(AnalysisMode.DEEP_DIVE);
+    // Small delay to ensure state updates before analysis
+    setTimeout(() => performAnalysis(topic, AnalysisMode.DEEP_DIVE, lang), 100);
   };
 
   // Dynamic UI Text
@@ -237,7 +265,7 @@ const App: React.FC = () => {
             {/* Mode Selection */}
             <div className="flex flex-wrap lg:flex-nowrap gap-2 mt-6 justify-center px-2">
               
-               {/* News Dashboard Button (New) */}
+               {/* News Dashboard Button */}
               <button
                 onClick={() => setMode(AnalysisMode.NEWS)}
                 className={`flex-1 min-w-[140px] lg:max-w-[200px] flex flex-col md:flex-row items-center gap-3 p-3 rounded-lg border transition-all ${
@@ -253,7 +281,7 @@ const App: React.FC = () => {
                   <div className={`text-xs md:text-sm font-bold ${mode === AnalysisMode.NEWS ? 'text-white' : 'text-slate-400'}`}>
                     {uiText.modeNews}
                   </div>
-                  <div className="text-[10px] text-slate-500 hidden md:block truncate">Latest Feed</div>
+                  <div className="text-[10px] text-slate-500 hidden md:block truncate">Latest Feed (10m Update)</div>
                 </div>
               </button>
 
@@ -324,7 +352,7 @@ const App: React.FC = () => {
           {/* Content Area */}
           <div className="w-full mt-8">
             {analysisState.status === 'loading' && (
-              <LoadingTerminal query={query} />
+              <LoadingTerminal query={query} lang={lang} />
             )}
 
             {analysisState.status === 'error' && (
@@ -364,7 +392,7 @@ const App: React.FC = () => {
                    </div>
                  </div>
 
-                 <ReportRenderer content={analysisState.data} />
+                 <ReportRenderer content={analysisState.data} onDeepDive={handleDeepDiveRequest} />
               </div>
             )}
           </div>

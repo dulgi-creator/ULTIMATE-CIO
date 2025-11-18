@@ -63,13 +63,24 @@ export const generateAnalysisReport = async (
         // Using Google Search Grounding is MANDATORY for this persona to get the Date/Time sync.
         tools: [{ googleSearch: {} }], 
         temperature: 0.7,
-        maxOutputTokens: mode === AnalysisMode.NEWS ? 2000 : 8000, 
+        maxOutputTokens: mode === AnalysisMode.NEWS ? 2000 : 8000,
+        safetySettings: [
+          { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_ONLY_HIGH' },
+          { category: 'HARM_CATEGORY_DANGEROUS_CONTENT', threshold: 'BLOCK_ONLY_HIGH' },
+          { category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT', threshold: 'BLOCK_ONLY_HIGH' },
+          { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_ONLY_HIGH' }
+        ],
       },
     });
 
     const text = response.text;
+    
     if (!text) {
-        throw new Error("No analysis generated.");
+        const candidate = response.candidates?.[0];
+        if (candidate && candidate.finishReason && candidate.finishReason !== 'STOP') {
+             throw new Error(`Analysis blocked. Reason: ${candidate.finishReason}`);
+        }
+        throw new Error("No analysis generated. The model returned an empty response.");
     }
     return text;
 
