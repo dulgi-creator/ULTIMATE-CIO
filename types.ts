@@ -1,6 +1,7 @@
 export enum AnalysisMode {
   DEEP_DIVE = 'TYPE_A',
-  QUICK_INTEL = 'TYPE_B'
+  QUICK_INTEL = 'TYPE_B',
+  NEWS = 'NEWS_DASHBOARD'
 }
 
 export type Language = 'en' | 'ko';
@@ -10,6 +11,15 @@ export interface AnalysisState {
   data: string | null; // Markdown content
   error: string | null;
   logs: string[]; // For the terminal effect
+}
+
+export interface SavedReport {
+  id: string;
+  title: string;
+  query: string;
+  mode: AnalysisMode;
+  date: string;
+  content: string;
 }
 
 export interface SearchParams {
